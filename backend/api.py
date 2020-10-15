@@ -16,6 +16,34 @@ CORS(app)
 '''
 #db_drop_and_create_all()
 
+
+# Helper Methods
+def get_short_drinks():
+    # Getting the drinks from the database and aborting with 500 status code if something goes wrong
+    drinks = None
+    try:
+        drinks = Drink.query.all()
+    except():
+        return drinks
+    # Getting drinks in its long repr
+    drinks_serialized = [drink.short() for drink in drinks]
+    # Returning the drinks in its short repr
+    return drinks_serialized
+
+
+def get_long_drinks():
+    # Getting the drinks from the database and aborting with 500 status code if something goes wrong
+    drinks = None
+    try:
+        drinks = Drink.query.all()
+    except():
+        return drinks
+    # Getting drinks in its long repr
+    drinks_serialized = [drink.long() for drink in drinks]
+    # Returning the drinks in its long repr
+    return drinks_serialized
+
+
 # ROUTES
 
 
@@ -26,15 +54,14 @@ def index():
 
 @app.route('/drinks', methods=['GET'])
 def get_drinks():
-    drinks = None
-    try:
-        drinks = Drink.query.all()
-    except():
+    # Getting the drinks from the database and aborting with 500 status code if something goes wrong
+    drinks = get_short_drinks()
+    if not drinks:
         abort(500)
-    drinks_serialized = [drink.short() for drink in drinks]
+    # Returning the response
     return jsonify({
         "success": True,
-        "drinks": drinks_serialized
+        "drinks": drinks
     }, 200)
 
 
@@ -42,63 +69,43 @@ def get_drinks():
 @requires_auth('get:drinks-detail')
 def get_drinks_detail(token_map):
     # Getting the drinks from the database and aborting with 500 status code if something goes wrong
-    drinks = None
-    try:
-        drinks = Drink.query.all()
-    except():
+    drinks = get_long_drinks()
+    if not drinks:
         abort(500)
-    # Getting drinks in its long repr
-    drinks_serialized = [drink.long() for drink in drinks]
     # Returning the response
     return jsonify({
         'success': True,
-        'drinks': drinks_serialized
+        'drinks': drinks
     }), 200
-
-
-'''
-@TODO implement endpoint
-    POST /drinks
-        it should create a new row in the drinks table
-        it should require the 'post:drinks' permission
-        it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
-        or appropriate status code indicating reason for failure
-'''
 
 
 @app.route("/drinks", methods=['POST'])
 @requires_auth('post:drinks')
-def add_drink(token):
-    # Checking auth token
-    if not token:
-        abort(401)
+def add_drink(token_map):
     # Getting the request data as JSON
     req_body = request.get_json()
     if req_body is None:
         abort(400)
-    # Checking if the user posted an invalid data
+    # Checking if the user posted an invalid data (id is passed from the frontend even though I don't use it)
     allowed_fields_of_drink = ['id', 'title', 'recipe']
     for field in req_body:
         if field not in allowed_fields_of_drink:
             abort(422)
-
-
-
     # Adding the drink to our database
-    recipe = json.dumps(req_body['recipe'])
-
-
-
+    recipe = json.dumps(req_body['recipe']) #json.loads() doesn't work here
     drink = Drink(req_body['title'], recipe)
     operation_success = drink.insert()
     if not operation_success:
         abort(500)
     # Returning the response
+    # Getting the drinks from the database and aborting with 500 status code if something goes wrong
+    drinks = get_long_drinks()
+    if not drinks:
+        abort(500)
     return jsonify({
         'success': True,
         'drink_id': drink.id,
-        'drinks': drink.long()
+        'drinks': drinks
     }), 201
 
 
