@@ -1,0 +1,14 @@
+login:
+https://dev-hassanien.us.auth0.com/authorize?audience={API_IDENTIFIER_Service}&response_type={code}&client_id={client_id_application}&redirect_uri={allowed_callback_url_application}
+ex:
+https://dev-hassanien.us.auth0.com/authorize?audience=drink&response_type=token&client_id=kEAUl13KixdCpumIIOG4HgzFSIZ8qe8O&redirect_uri=http://localhost:5000/callback
+
+
+-----------
+logout:
+https://your_domain/v2/logout?client_id=YOUR_CLIENT_ID&returnTo=LOGOUT_URL
+https://dev-hassanien.us.auth0.com/v2/logout?client_id=kEAUl13KixdCpumIIOG4HgzFSIZ8qe8O&returnTo=http://localhost:5000
+
+
+Solidsnake208
+https://manage.auth0.com/dashboard/us/dev-hassanien/

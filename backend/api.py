@@ -1,11 +1,9 @@
-import os
 from flask import Flask, request, jsonify, abort
-from sqlalchemy import exc
 import json
 from flask_cors import CORS
 
-from .database.models import db_drop_and_create_all, setup_db, Drink
-from .auth.auth import AuthError, requires_auth
+from src.database.models import db_drop_and_create_all, setup_db, Drink
+from src.auth.auth import AuthError, requires_auth
 
 app = Flask(__name__)
 setup_db(app)
@@ -16,27 +14,46 @@ CORS(app)
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
-db_drop_and_create_all()
+#db_drop_and_create_all()
 
-## ROUTES
-'''
-@TODO implement endpoint
-    GET /drinks
-        it should be a public endpoint
-        it should contain only the drink.short() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
-        or appropriate status code indicating reason for failure
-'''
+# ROUTES
 
 
-'''
-@TODO implement endpoint
-    GET /drinks-detail
-        it should require the 'get:drinks-detail' permission
-        it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
-        or appropriate status code indicating reason for failure
-'''
+@app.route('/', methods=['GET'])
+def index():
+    return 'Welcome to Coffee API!'
+
+
+@app.route('/drinks', methods=['GET'])
+def get_drinks():
+    drinks = None
+    try:
+        drinks = Drink.query.all()
+    except():
+        abort(500)
+    drinks_serialized = [drink.short() for drink in drinks]
+    return jsonify({
+        "success": True,
+        "drinks": drinks_serialized
+    }, 200)
+
+
+@app.route('/drinks-detail', methods=['GET'])
+@requires_auth('get:drinks-detail')
+def get_drinks_detail(token_map):
+    # Getting the drinks from the database and aborting with 500 status code if something goes wrong
+    drinks = None
+    try:
+        drinks = Drink.query.all()
+    except():
+        abort(500)
+    # Getting drinks in its long repr
+    drinks_serialized = [drink.long() for drink in drinks]
+    # Returning the response
+    return jsonify({
+        'success': True,
+        'drinks': drinks_serialized
+    }), 200
 
 
 '''
@@ -48,6 +65,42 @@ db_drop_and_create_all()
     returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
         or appropriate status code indicating reason for failure
 '''
+
+
+@app.route("/drinks", methods=['POST'])
+@requires_auth('post:drinks')
+def add_drink(token):
+    # Checking auth token
+    if not token:
+        abort(401)
+    # Getting the request data as JSON
+    req_body = request.get_json()
+    if req_body is None:
+        abort(400)
+    # Checking if the user posted an invalid data
+    allowed_fields_of_drink = ['id', 'title', 'recipe']
+    for field in req_body:
+        if field not in allowed_fields_of_drink:
+            abort(422)
+
+
+
+    # Adding the drink to our database
+    recipe = json.dumps(req_body['recipe'])
+
+
+
+    drink = Drink(req_body['title'], recipe)
+    operation_success = drink.insert()
+    if not operation_success:
+        abort(500)
+    # Returning the response
+    return jsonify({
+        'success': True,
+        'drink_id': drink.id,
+        'drinks': drink.long()
+    }), 201
+
 
 
 '''
@@ -75,14 +128,16 @@ db_drop_and_create_all()
 '''
 
 
-## Error Handling
+# Error Handling
 '''
 Example error handling for unprocessable entity
 '''
+
+
 @app.errorhandler(422)
 def unprocessable(error):
     return jsonify({
-                    "success": False, 
+                    "success": False,
                     "error": 422,
                     "message": "unprocessable"
                     }), 422

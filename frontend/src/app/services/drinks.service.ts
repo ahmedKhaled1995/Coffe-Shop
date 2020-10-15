@@ -95,13 +95,14 @@ export class DrinksService {
       this.http.get(this.url + '/drinks-detail', this.getHeaders())
       .subscribe((res: any) => {
         this.drinksToItems(res.drinks);
-        console.log(res);
+        //console.log(res.drinks);
       });
     } else {
       this.http.get(this.url + '/drinks', this.getHeaders())
       .subscribe((res: any) => {
         this.drinksToItems(res.drinks);
         console.log(res);
+        console.log(res.drinks);
       });
     }
 
@@ -135,6 +136,7 @@ export class DrinksService {
   }
 
   drinksToItems( drinks: Array<Drink>) {
+    //console.log(drinks)
     for (const drink of drinks) {
       this.items[drink.id] = drink;
     }
