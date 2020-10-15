@@ -52,7 +52,7 @@ def check_permissions(permission, payload):
     if 'permissions' not in payload:
         raise AuthError({
             'code': 'bad payload',
-            'description': 'payload doesn\'t have permissions array'
+            'description': 'payload does not have permissions array'
         }, 400)
     # Checking if the client can preform that action
     if permission not in payload['permissions']:
